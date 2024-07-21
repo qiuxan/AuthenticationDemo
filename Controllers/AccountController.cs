@@ -8,6 +8,10 @@ using System.Text;
 
 namespace AuthenticationDemo.Controllers
 {
+
+    [ApiController]
+    [Route("[controller]")]
+
     public class AccountController(UserManager<AppUser> userManager, IConfiguration configuration)
         : ControllerBase
     {
@@ -54,6 +58,27 @@ namespace AuthenticationDemo.Controllers
             // If we got this far, something failed, redisplay form
             return BadRequest(ModelState);
 
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        {
+            // Get the secret in the configuration
+            // Check if the model is valid
+            if (ModelState.IsValid)
+            {
+                var user = await userManager.FindByNameAsync(model.UserName);
+                if (user != null)
+                {
+                    if (await userManager.CheckPasswordAsync(user, model.Password))
+                    {
+                        var token = GenerateToken(model.UserName);
+                        return Ok(new { token });
+                    }
+                }
+                // If the user is not found, display an error message
+                ModelState.AddModelError("", "Invalid username or password");
+            }
+            return BadRequest(ModelState);
         }
 
 
